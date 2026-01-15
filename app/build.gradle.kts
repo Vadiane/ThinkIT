@@ -7,14 +7,14 @@ plugins {
 
 android {
     namespace = "com.example.thinkit"
-    // CORRECTION : Passage au SDK 36 requis par vos bibliothèques AndroidX récentes
     compileSdk = 36
+    // CORRECTION : Passage au SDK 36 requis par vos bibliothèques AndroidX récentes
 
     defaultConfig {
         applicationId = "com.example.thinkit"
         minSdk = 24
         // CORRECTION : Passage au SDK 36
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 

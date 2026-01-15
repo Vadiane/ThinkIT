@@ -55,8 +55,8 @@ fun AddNoteScreen(
                 }
                 IconButton(onClick = {
                     if (title.isNotBlank()) {
-                        onNoteSaved(title, description, selectedColor, noteToEdit?.id)
-                        onBack()
+                        val noteIdString = noteToEdit?.id?.toString()
+                        onNoteSaved(title, description, selectedColor, noteIdString)
                     }
                 }) {
                     Icon(Icons.Default.Check, contentDescription = "Sauvegarder")

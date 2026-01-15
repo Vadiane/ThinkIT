@@ -31,7 +31,9 @@ import com.example.thinkit.ui.model.Note
 
 @Composable
 fun MainScreen(viewModel: NoteViewModel, onNavigateToAdd: (Note?) -> Unit) {
-    val notes by viewModel.notes.collectAsState()
+    // Utiliser collectAsState avec une valeur initiale vide pour éviter les flashs blancs
+    val notes by viewModel.notes.collectAsState(initial = emptyList())
+    var noteToDelete by remember { mutableStateOf<Note?>(null) }
 
     Scaffold(
         floatingActionButton = {
@@ -41,19 +43,20 @@ fun MainScreen(viewModel: NoteViewModel, onNavigateToAdd: (Note?) -> Unit) {
                 shape = CircleShape,
                 modifier = Modifier
                     .size(60.dp)
-                    .offset(y = (20).dp)
+                    // Attention : l'offset peut cacher le bouton sur certains écrans
+                    .offset(y = (10).dp)
             ) {
-                // Utilisation de Icons.Default.Add
                 Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.Black)
             }
         },
         floatingActionButtonPosition = FabPosition.Center,
         containerColor = Color(0xFFF7F9E7)
     ) { padding ->
+        // On utilise fillMaxSize() avec le padding du Scaffold
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(padding) // Applique le padding du Scaffold
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -81,35 +84,40 @@ fun MainScreen(viewModel: NoteViewModel, onNavigateToAdd: (Note?) -> Unit) {
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    // Ajouter un petit padding en bas pour que la dernière note
+                    // ne soit pas cachée par le bouton flottant
+                    contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
                     items(notes, key = { it.id }) { note ->
                         NoteCard(
                             note = note,
                             onClick = { onNavigateToAdd(note) },
-                            onDelete = { viewModel.deleteNote(note) }
+                            onDelete = { noteToDelete = note }
                         )
                     }
                 }
             }
         }
-        // DIALOGUE DE SUPPRESSION (Reste identique)
-        var noteToDelete by remember { mutableStateOf<Note?>(null) }
-        noteToDelete?.let { note ->
+
+        // Dialogue de suppression
+        if (noteToDelete != null) {
             AlertDialog(
                 onDismissRequest = { noteToDelete = null },
                 title = { Text("Supprimer ?") },
-                text = { Text("Voulez-vous vraiment supprimer cette note ?") },
+                text = { Text("Voulez-vous vraiment supprimer cette note définitivement ?") },
                 confirmButton = {
                     TextButton(onClick = {
-                        viewModel.deleteNote(note)
+                        noteToDelete?.let { viewModel.deleteNote(it) }
                         noteToDelete = null
                     }) {
-                        Text("Supprimer", color = Color.Red)
+                        Text("Supprimer", color = Color.Red, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { noteToDelete = null }) { Text("Annuler") }
+                    TextButton(onClick = { noteToDelete = null }) {
+                        Text("Annuler", color = Color.Gray)
+                    }
                 }
             )
         }
@@ -123,6 +131,7 @@ fun NoteCard(note: Note, onClick: () -> Unit, onDelete: () -> Unit) {
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
+        // On s'assure que la couleur de fond est bien appliquée
         colors = CardDefaults.cardColors(containerColor = Color(note.couleur))
     ) {
         Row(
@@ -132,19 +141,28 @@ fun NoteCard(note: Note, onClick: () -> Unit, onDelete: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(note.title, fontSize = 24.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    note.title,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(note.description,
+                Text(
+                    note.description,
                     fontSize = 16.sp,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis ,
-                    color = Color.Black.copy(alpha = 0.7f))
+                    maxLines = 3, // Augmenté à 3 pour voir un extrait
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color.Black.copy(alpha = 0.7f)
+                )
             }
             IconButton(onClick = onDelete) {
                 Icon(
                     painter = painterResource(id = R.drawable.delete),
                     contentDescription = "Delete",
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.Black.copy(alpha = 0.6f)
                 )
             }
         }
