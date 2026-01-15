@@ -9,17 +9,20 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
@@ -38,11 +41,7 @@ fun AddNoteScreen(
 ) {
     var title by remember { mutableStateOf(noteToEdit?.title ?: "") }
     var description by remember { mutableStateOf(noteToEdit?.description ?: "") }
-
-    // État de la couleur (initialisée avec la couleur de la note ou Blanc par défaut)
-    var selectedColor by remember { mutableStateOf(noteToEdit?.couleur ?: 0xFFFFFFFF) }
-
-    // État pour afficher/masquer le sélecteur de couleurs
+    var selectedColor by remember { mutableLongStateOf(noteToEdit?.couleur ?: 0xFFF7F9E7) }
     var showColorPicker by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -97,17 +96,16 @@ fun AddNoteScreen(
                 )
             }
 
-            // BOUTON ROUE CHROMATIQUE : Ouvre le dialogue de sélection
+            // ROUE CHROMATIQUE
             Image(
                 painter = painterResource(id = R.drawable.color_wheel),
                 modifier = Modifier
                     .size(60.dp)
-                    .clickable { showColorPicker = true }, // Ouvre le sélecteur
+                    .clickable { showColorPicker = true },
                 contentDescription = "Choisir une couleur"
             )
         }
 
-        // Affiche le dialogue si showColorPicker est vrai
         if (showColorPicker) {
             ColorPickerDialog(
                 initialColor = selectedColor,
@@ -127,12 +125,15 @@ fun ColorPickerDialog(
     onColorSelected: (Long) -> Unit,
     onDismiss: () -> Unit
 ) {
-    // Liste élargie de couleurs pour donner du choix à l'utilisateur
-    val availableColors = listOf(
+    // Liste de suggestions rapides
+    val quickColors = listOf(
         0xFFFFD1DF, 0xFFE0D7FF, 0xFFD1FFEA, 0xFFFFF4D1, 0xFFF7F9E7,
-        0xFFB2EBF2, 0xFFFFE0B2, 0xFFF8BBD0, 0xFFDCEDC8, 0xFFD1C4E9,
-        0xFFFFFFFF, 0xFFE0E0E0, 0xFFFFCCBC, 0xFFCFD8DC, 0xFFF0F4C3
+        0xFFB2EBF2, 0xFFFFE0B2, 0xFFFFFFFF, 0xFFE0E0E0, 0xFFCFD8DC
     )
+
+    // État pour le slider de couleur personnalisée
+    var hue by remember { mutableFloatStateOf(0f) }
+    val customColor = Color.hsv(hue, 0.2f, 0.95f) // Couleurs douces (Pastels) pour le fond
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -144,23 +145,65 @@ fun ColorPickerDialog(
                 modifier = Modifier.padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Choisir la couleur de fond", style = MaterialTheme.typography.titleLarge)
+                Text("Couleur personnalisée", style = MaterialTheme.typography.titleLarge)
+
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Grille de couleurs
+                // 1. LE SLIDER ARC-EN-CIEL (Choix libre)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(20.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color.Red, Color.Yellow, Color.Green,
+                                    Color.Cyan, Color.Blue, Color.Magenta, Color.Red
+                                )
+                            )
+                        )
+                )
+                Slider(
+                    value = hue,
+                    onValueChange = { hue = it },
+                    valueRange = 0f..360f,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Aperçu de la couleur choisie via le slider
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                        .background(customColor)
+                        .border(2.dp, Color.Gray, CircleShape)
+                        .clickable { onColorSelected(customColor.toArgb().toLong()) }
+                )
+                Text("Appuyer pour choisir cette teinte", fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 20.dp),
+                    thickness = DividerDefaults.Thickness,
+                    color = DividerDefaults.color
+                )
+
+                // 2. LA GRILLE (Choix rapides)
+                Text("Suggestions rapides", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(10.dp))
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(4),
-                    modifier = Modifier.height(200.dp)
+                    columns = GridCells.Fixed(5),
+                    modifier = Modifier.height(110.dp)
                 ) {
-                    items(availableColors) { colorLong ->
+                    items(quickColors) { colorLong ->
                         Box(
                             modifier = Modifier
-                                .padding(8.dp)
-                                .size(40.dp)
+                                .padding(4.dp)
+                                .size(35.dp)
                                 .clip(CircleShape)
                                 .background(Color(colorLong))
                                 .border(
-                                    width = if (initialColor == colorLong) 3.dp else 1.dp,
+                                    width = if (initialColor == colorLong) 2.dp else 0.5.dp,
                                     color = if (initialColor == colorLong) Color.Black else Color.LightGray,
                                     shape = CircleShape
                                 )
@@ -169,8 +212,8 @@ fun ColorPickerDialog(
                     }
                 }
 
-                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-                    Text("Annuler")
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Annuler") }
                 }
             }
         }

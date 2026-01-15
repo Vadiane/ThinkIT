@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.thinkit.ui.components.NoteViewModel
@@ -31,7 +32,6 @@ import com.example.thinkit.ui.model.Note
 @Composable
 fun MainScreen(viewModel: NoteViewModel, onNavigateToAdd: (Note?) -> Unit) {
     val notes by viewModel.notes.collectAsState()
-    var noteToDelete by remember { mutableStateOf<Note?>(null) }
 
     Scaffold(
         floatingActionButton = {
@@ -79,10 +79,9 @@ fun MainScreen(viewModel: NoteViewModel, onNavigateToAdd: (Note?) -> Unit) {
                     Text("Aucune note pour l'instant", color = Color.Gray)
                 }
             } else {
-                // La LazyColumn doit être à l'intérieur du else
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.weight(1f) // Utiliser weight(1f) ici pour ne pas masquer le bouton
+                    modifier = Modifier.weight(1f)
                 ) {
                     items(notes, key = { it.id }) { note ->
                         NoteCard(
@@ -95,6 +94,7 @@ fun MainScreen(viewModel: NoteViewModel, onNavigateToAdd: (Note?) -> Unit) {
             }
         }
         // DIALOGUE DE SUPPRESSION (Reste identique)
+        var noteToDelete by remember { mutableStateOf<Note?>(null) }
         noteToDelete?.let { note ->
             AlertDialog(
                 onDismissRequest = { noteToDelete = null },
@@ -134,7 +134,11 @@ fun NoteCard(note: Note, onClick: () -> Unit, onDelete: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(note.title, fontSize = 24.sp, fontWeight = FontWeight.Medium)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(note.description, fontSize = 16.sp, color = Color.Black.copy(alpha = 0.7f))
+                Text(note.description,
+                    fontSize = 16.sp,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis ,
+                    color = Color.Black.copy(alpha = 0.7f))
             }
             IconButton(onClick = onDelete) {
                 Icon(
